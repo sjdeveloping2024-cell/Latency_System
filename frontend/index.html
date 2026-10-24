@@ -41,8 +41,9 @@
 
   .titlebar {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
+    gap: 12px;
     margin-bottom: 6px;
   }
 
@@ -60,6 +61,84 @@
   .clock {
     font-size: 12px;
     color: var(--text-dim);
+  }
+
+  .titlebar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .net {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    cursor: default;
+  }
+
+  .net-name {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.25s ease;
+  }
+
+  .wifi-icon {
+    display: block;
+    flex: none;
+    width: 17px;
+    height: 15px;
+    color: var(--text-dim);
+    overflow: visible;
+    transition: color 0.3s ease, filter 0.3s ease;
+  }
+
+  .wifi-icon .wave {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    opacity: 0.14;
+    transition: opacity 0.25s ease;
+  }
+
+  .wifi-icon .wifi-dot {
+    fill: currentColor;
+    opacity: 0.14;
+    transition: opacity 0.25s ease;
+  }
+
+  .wifi-icon .lit { opacity: 1; }
+
+  .net[data-state="good"] .wifi-icon {
+    color: var(--accent);
+    filter: drop-shadow(0 0 4px rgba(255, 140, 43, 0.35));
+  }
+  .net[data-state="fair"] .wifi-icon { color: var(--warn); }
+  .net[data-state="weak"] .wifi-icon { color: var(--bad); }
+  .net[data-state="offline"] .wifi-icon { color: var(--text-dim); opacity: 0.55; }
+
+  .net.live .wifi-icon .lit {
+    animation: wifi-pulse 2.4s ease-in-out infinite;
+  }
+  .net.live .wifi-icon .wifi-dot { animation-delay: 0s; }
+  .net.live .wifi-icon .wave-3 { animation-delay: 0.24s; }
+  .net.live .wifi-icon .wave-2 { animation-delay: 0.48s; }
+  .net.live .wifi-icon .wave-1 { animation-delay: 0.72s; }
+
+  @keyframes wifi-pulse {
+    0%, 100% { opacity: 1; }
+    40% { opacity: 0.3; }
+  }
+
+  @media (max-width: 560px) {
+    .net-name { display: none; }
   }
 
   h1 {
@@ -165,7 +244,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
 
   .metric {
@@ -190,21 +269,89 @@
   }
   .metric-value.accent { color: var(--accent); }
 
-  .ping-log {
-    font-size: 12px;
-    color: var(--text-dim);
-    line-height: 1.9;
+  .metric.graph-card {
+    padding: 12px 14px 10px;
   }
 
-  .ping-log .row {
+  .graph-head {
     display: flex;
+    align-items: baseline;
     justify-content: space-between;
-    border-bottom: 1px dashed rgba(255,255,255,0.05);
-    padding: 2px 0;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-bottom: 8px;
   }
 
-  .ping-log .row span:last-child {
+  .graph-head .metric-label {
+    margin-bottom: 0;
+  }
+
+  .graph-meta {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .graph-meta b {
     color: var(--text);
+    font-weight: 600;
+  }
+
+  .net-graph {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .net-graph .grid-line {
+    stroke: rgba(245,233,221,0.07);
+    stroke-width: 1;
+  }
+
+  .net-graph .axis-label {
+    fill: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+
+  .net-graph .value-label {
+    fill: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .net-graph .area {
+    fill: url(#areaFill);
+  }
+
+  .net-graph .line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: draw-line 0.7s ease-out 0.05s forwards;
+  }
+
+  .net-graph .dot {
+    fill: var(--accent);
+    stroke: var(--panel);
+    stroke-width: 2;
+    animation: fade-in 0.35s ease-out both;
+  }
+
+  @keyframes draw-line { to { stroke-dashoffset: 0; } }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .net.live .wifi-icon .lit { animation: none; }
+    .net-graph .line,
+    .net-graph .dot { animation: none; stroke-dashoffset: 0; }
   }
 
   .again-btn {
@@ -246,7 +393,18 @@
 <div class="console">
   <div class="titlebar">
     <div class="brand"><strong>FS</strong>_CHECK / v1.0</div>
-    <div class="clock" id="clock"></div>
+    <div class="titlebar-right">
+      <div class="net" id="net" data-state="offline" title="Checking Wi-Fi…" aria-label="Checking Wi-Fi">
+        <svg class="wifi-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path class="wave wave-1" data-level="4" d="M2.9 8.6a13.6 13.6 0 0 1 18.2 0" />
+          <path class="wave wave-2" data-level="3" d="M6.2 12.3a9 9 0 0 1 11.6 0" />
+          <path class="wave wave-3" data-level="2" d="M9.5 16a4.4 4.4 0 0 1 5 0" />
+          <circle class="wifi-dot" data-level="1" cx="12" cy="19.6" r="1.6" />
+        </svg>
+        <span class="net-name" id="netName">Wi-Fi</span>
+      </div>
+      <div class="clock" id="clock"></div>
+    </div>
   </div>
 
   <h1>Network latency <span>scanner</span></h1>
@@ -263,6 +421,51 @@
 </div>
 
 <script>
+const netEl = document.getElementById('net');
+const netNameEl = document.getElementById('netName');
+
+function applyNetwork(info) {
+  const connected = Boolean(info && info.connected && info.ssid);
+  const signal = connected ? Math.max(0, Math.min(100, Number(info.signal) || 0)) : 0;
+  const level = !connected ? 0 : signal >= 75 ? 4 : signal >= 50 ? 3 : signal >= 25 ? 2 : 1;
+  const state = !connected ? 'offline' : signal >= 65 ? 'good' : signal >= 35 ? 'fair' : 'weak';
+
+  netEl.dataset.state = state;
+  netEl.classList.toggle('live', connected);
+
+  netEl.querySelectorAll('.wifi-icon [data-level]').forEach(el => {
+    el.classList.toggle('lit', connected && Number(el.dataset.level) <= level);
+  });
+
+  netNameEl.textContent = connected ? info.ssid : 'No Wi-Fi';
+
+  if (connected) {
+    const details = [`${signal}% signal`];
+    if (info.band) details.push(info.band);
+    if (info.receive_mbps != null) details.push(`${info.receive_mbps} Mbps`);
+    netEl.title = `${info.ssid} · ${details.join(' · ')}`;
+  } else {
+    netEl.title = 'No Wi-Fi network detected';
+  }
+  netEl.setAttribute('aria-label', netEl.title);
+}
+
+async function refreshNetwork() {
+  try {
+    const res = await fetch('/network', { cache: 'no-store' });
+    if (!res.ok) throw new Error('Network check failed');
+    applyNetwork(await res.json());
+  } catch (err) {
+    applyNetwork(null);
+  }
+}
+
+refreshNetwork();
+setInterval(() => { if (!document.hidden) refreshNetwork(); }, 15000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshNetwork(); });
+window.addEventListener('online', refreshNetwork);
+window.addEventListener('offline', () => applyNetwork(null));
+
 function tickClock() {
   const el = document.getElementById('clock');
   const now = new Date();
@@ -330,10 +533,9 @@ function renderResult(data) {
 
   const statusClass = data.stable ? 'stable' : 'unstable';
   const statusLabel = data.stable ? 'Stable' : 'Unstable';
-
-  const rows = data.pings_ms.map((p, i) =>
-    `<div class="row"><span>probe ${i + 1}</span><span>${p} ms</span></div>`
-  ).join('');
+  const pings = data.pings_ms;
+  const minMs = Math.min(...pings);
+  const maxMs = Math.max(...pings);
 
   return `
     <div class="panel-header">
@@ -350,7 +552,75 @@ function renderResult(data) {
         <div class="metric-value">${data.jitter_ms} ms</div>
       </div>
     </div>
-    <div class="ping-log">${rows}</div>
+    <div class="metric graph-card">
+      <div class="graph-head">
+        <span class="metric-label">Network graph</span>
+        <span class="graph-meta">min <b>${minMs}</b> &middot; avg <b>${data.average_ms}</b> &middot; max <b>${maxMs}</b> ms</span>
+      </div>
+      ${renderGraph(pings)}
+    </div>
+  `;
+}
+
+function renderGraph(pings) {
+  if (!pings.length) return '';
+
+  const W = 560, H = 168;
+  const pad = { top: 26, right: 16, bottom: 26, left: 36 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  const min = Math.min(...pings);
+  const max = Math.max(...pings);
+  const spread = Math.max(max - min, 1);
+  const lo = Math.max(0, min - spread * 0.35);
+  const hi = max + spread * 0.35;
+  const range = Math.max(hi - lo, 0.001);
+
+  const xAt = i => {
+    const inset = 12;
+    const usableW = plotW - inset * 2;
+    return pings.length === 1
+      ? pad.left + plotW / 2
+      : pad.left + inset + (usableW * i) / (pings.length - 1);
+  };
+  const yAt = v => pad.top + plotH - ((v - lo) / range) * plotH;
+  const axisLabel = v => range < 6 ? v.toFixed(1) : Math.round(v).toString();
+
+  const points = pings.map((v, i) => ({ x: xAt(i), y: yAt(v), v }));
+  const linePath = points
+    .map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+    .join(' ');
+
+  const baseline = pad.top + plotH;
+  const areaPath = `${linePath} L${points[points.length - 1].x.toFixed(1)},${baseline} L${points[0].x.toFixed(1)},${baseline} Z`;
+
+  const grid = [0, 0.5, 1].map(t => {
+    const y = pad.top + plotH * t;
+    const label = axisLabel(hi - range * t);
+    return `<line class="grid-line" x1="${pad.left}" y1="${y}" x2="${W - pad.right}" y2="${y}" />
+      <text class="axis-label" x="${pad.left - 8}" y="${y + 3}" text-anchor="end">${label}</text>`;
+  }).join('');
+
+  const marks = points.map((p, i) => `
+    <circle class="dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2" />
+    <text class="value-label" x="${p.x.toFixed(1)}" y="${(p.y - 10).toFixed(1)}" text-anchor="middle">${p.v}</text>
+    <text class="axis-label" x="${p.x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${i + 1}</text>`).join('');
+
+  return `
+    <svg class="net-graph" viewBox="0 0 ${W} ${H}" role="img" aria-label="Latency per probe in milliseconds">
+      <title>Latency per probe in milliseconds</title>
+      <defs>
+        <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ff8c2b" stop-opacity="0.26" />
+          <stop offset="100%" stop-color="#ff8c2b" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      ${grid}
+      <path class="area" d="${areaPath}" />
+      <path class="line" pathLength="1" d="${linePath}" />
+      ${marks}
+    </svg>
   `;
 }
 </script>
